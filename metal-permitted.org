@@ -1,5 +1,33 @@
 Attempt to put together all that I have previously done on metal recombination lines, particularly in Orion
 
+* New stuff [2017-10-24 Tue]
+
+** TODO Get line strengths vs (n, T) from Storey (2017)
+
+** TODO Look at O I 7773 recombination line
++ From Jorge García's talk
++ O I triplet at 7771 + 73 + 74 Ang
++ Supposedly a recombination line
++ I think we have it in the MUSE data
++ This is in wavelength section 5
+*** DONE First impressions
+CLOSED: [2017-10-24 Tue 17:56]
++ Line clearly detected
++ Contaminated by night sky, which needs to be dealt with
++ To first order, looks like [O II] 7330
+  + /Except/ it is missing some features:
+    1. Narrow bright bar completely missing
+    2. Orion S high-Te region is much weaker (not a surprise)
+    3. HH 202 is weaker I think
+*** TODO [1/4] Steps to reduce MUSE 7773 line
++ [X] Extract line
++ [ ] Deal with night sky component
+  + Needs to be done panel by panel
+  + Maybe use [O I] 5577 - *no, it is too different*
+  + Work from outside \to inside and look for jumps between tiles
++ [ ] Multi-binning
++ [ ] Fuzzing
+
 * Guide to all my previous work
 + Figures that I am gathering from other places are in [[file:copied-figs/]] 
 ** General musings
