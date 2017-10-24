@@ -1,0 +1,57 @@
+Attempt to put together all that I have previously done on metal recombination lines, particularly in Orion
+
+* Guide to all my previous work
++ Figures that I am gathering from other places are in [[file:copied-figs/]] 
+** General musings
++ I have a lot of discussion in the org file [[file:~/Work/RubinWFC3/Tsquared/recomb-lines.org][file:~/Work/RubinWFC3/Tsquared/recomb-lines.org]]
+  + For example [[id:DE843C1D-0502-4DB0-8C49-538DAC045AF6][Fluorescence vs recombination for the permitted lines]]
+    + where I draw on some of Vladimir's papers, but don't come to any firm conclusions
+    + Although I note that the 4591 line gives an ADF of zero
++ 
+** Ratios that should stay the same in the V1 multiplet
++ Theoretical ratios
+  + 4642 / (4639+49+51+62) = 0.32
+  + 4674 / (4639+49+51+62) = 0.13
+  + 4676 / (4639+49+51+62) = 0.02
++ Manu spectra [[file:copied-figs/oii-insensitive-blue.pdf]]
+  + Discussed in [[file:~/Work/RubinWFC3/Tsquared/Manu%20Spectra.ipynb][file:~/Work/RubinWFC3/Tsquared/Manu Spectra.ipynb]]
+  + Need to add 43% N II + N III contamination to the 4642 line 
++ Adal spectra [[file:copied-figs/oii-insensitive-adal-slit6.pdf]]
+  + Discussed in [[file:~/Work/RubinWFC3/Tsquared/Adal%20spectra.ipynb][file:~/Work/RubinWFC3/Tsquared/Adal spectra.ipynb]]
+  + No need for correction for N II but N III is still blended - could maybe be resolved by fitting gaussians
+** Density-sensitive ratios
++ He I 5876/6678 ratio
+  + Trouble is, the MUSE maps show that this is largely due to extinction
+  + Varies from 2.8 (high extinction) to 3.6 (low extinction)
+  + Adal has it other way up: 0.3 to 0.34, so a similar range
++ Manu has [Cl III] and [Ar IV] ratios, which may be more sensible
+  + [[file:copied-figs/oii-density-compare.pdf]]
+  + [[file:copied-figs/oii-density-vs-radius.pdf]]
+  + [[file:copied-figs/oii-vs-cliii-densities.pdf]]
+    + Strangely, O II densities are lower than 
+** Temperature-sensitive ratios
++ Adal spectra with binning has lots of plots, such as
+  + [[file:copied-figs/oii-t-orlcel-vs-cel-adal-bin.png]]
+  + [[file:copied-figs/oii-t-orl-vs-cel-adal-bin.png]]
++ Manu spectra
+  + [[file:copied-figs/oii-oiii-temperature-masked.pdf]]
+  + [[file:copied-figs/oii-oiii-temperature.pdf]]
+  + [[file:copied-figs/oii-temperature-three-vs-radius.pdf]]
++ The comparison of T(ORL-CEL) with T(CEL) is consistent with a 10% difference between the two
++ The T(ORL) values from O II V1 4649 / V 15 4591 are strange
+  + The ratio *falls* with radius for Manu data, which indicates that
+    T is climbing!
+    + Observed values \approx 10 at 30 arcsec, falling to 5 at 100 arcsec
+    + Implying T rises from 3000 K to 7000 K
+  + But Adal results are a /bit/ more sensible
+    + There is a jump in the CEL T at the edge of Orion-S, with Orion S having a higher 4363/4959
+    + It also has a lower V1/4959, consistent with higher T
+    + And a lower 4649/4591 (about 6 => T = 5000 K)
+    + Whereas directly below Trap has 4649/4591 = 9 => T = 4000 K
+    + Equivalent T(CEL) are 8700 and 8400 K
++ *But note that these all need de-reddening*
++ Other T-sensitive ORL ratios are
+  + 4649/4189
+    + Looks like we can see it clearly in Manu spectra - not sure why I haven't measured it
+  + 4649/4089
+    + Affected by various blends
