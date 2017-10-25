@@ -19,14 +19,103 @@ CLOSED: [2017-10-24 Tue 17:56]
     1. Narrow bright bar completely missing
     2. Orion S high-Te region is much weaker (not a surprise)
     3. HH 202 is weaker I think
-*** TODO [1/4] Steps to reduce MUSE 7773 line
+*** TODO [1/5] Steps to reduce MUSE 7773 line
 + [X] Extract line
++ [ ] Extract line better (turns out there is another line at 7780, which means that we can't get a continuum level on the red side of the line)
 + [ ] Deal with night sky component
   + Needs to be done panel by panel
   + Maybe use [O I] 5577 - *no, it is too different*
   + Work from outside \to inside and look for jumps between tiles
 + [ ] Multi-binning
 + [ ] Fuzzing
+  + (or is that really necessary?)
+  + might be, if we want to take ratios
+** TODO Looking at all the MUSE O II and N II lines
++ These are in better shape than I thought
++ We should be able to get the O II V1 multiplet in three parts:
+  1) 4642+39
+     - cleanly extracted
+     - but blended with N III and N II
+  2) 4649+51
+     - very badly extracted 
+     - we will need to fit gaussians I think
+     - to get densities, we need to discriminate 49 from 51
+  3) 4674+76
+     - a bit weak, but extracted OK
+     - except that it is affected by the He II 4686 absorption
+     - so best to use gaussians
++ Ratio 4642/5007 shows peak along rim of Big Arc
++ N II lines
+  + 4607 is badly contaminated with [Fe III]
+  + 4631 is OK but noisy
+  + 4803 is weak and only to W of Trap
+  + 5667, 5680 are similar (*multiplet 3*)
+    + (combination of several components)
+    + Additional weaker ones at 5686, 5711
+    + Look similar to 4642, except for inner bits
+    + 5680 could maybe used to remove N II from 4642
+      + Recomb coeffs are in Pequignot et al 1991
+      + Around 1.4e-13 (Case B) for 5680
+      + But /doesn't give/ 4642
+      + Fang 2011 has them too
+      + Looks like *5680/5667 is a density indicator*
+        + R = 2 => 1e4 pcc
+        + R = 1.5 => 1e3 pcc
+        + [X] Ratio needs maps to be binned
+        + I get a gradient from about 1.7 to 1.4 from center to outskirt of the nebula.  But I have to bin it an awful lot
+  + 5942 is clearly different and may have fluorescent component
+*** Doing the multibinning in situ
+Can do this on laptop
+#+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
+  D=../multibin-maps
+  for line in N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676; do
+      python $D/multibin-map.py LineMaps/linesum-$line.fits
+  done
+#+END_SRC
+Run in terminal
+
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py N_II-5680 N_II-5667 linesum bin256
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-N_II-5680-bin256.fits LineMaps/linesum-N_II-5667-bin256.fits
+
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py O_II-4642 O_III-5007 linesum bin032
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-O_II-4642-bin032.fits LineMaps/linesum-O_III-5007-bin032.fits
+
+
+** Maybe even do the Si II lines?
+** Copying some stuff from linux server
+#+BEGIN_SRC sh :results verbatim
+  date
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942}.fits LineMaps
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_III-5007-bin{001,032}.fits LineMaps
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/muse-hr-image-wfc3-f547m.fits .
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Wed Oct 25 02:17:23 CDT 2017
+receiving incremental file list
+
+sent 11 bytes  received 385 bytes  264.00 bytes/sec
+total size is 177,333,120  speedup is 447,810.91
+receiving incremental file list
+linesum-O_III-5007-bin032.fits
+
+sent 30 bytes  received 335,690 bytes  134,288.00 bytes/sec
+total size is 88,099,200  speedup is 262.42
+receiving incremental file list
+
+sent 11 bytes  received 82 bytes  62.00 bytes/sec
+total size is 10,558,080  speedup is 113,527.74
+#+end_example
+
 
 * Guide to all my previous work
 + Figures that I am gathering from other places are in [[file:copied-figs/]] 
