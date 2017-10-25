@@ -95,7 +95,7 @@ CLOSED: [2017-10-24 Tue 17:56]
 Can do this on laptop
 #+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
   D=../multibin-maps
-  for line in N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773; do
+  for line in Ni_IV-5820 N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773; do
       python $D/multibin-map.py LineMaps/linesum-$line.fits
   done
 #+END_SRC
@@ -121,13 +121,50 @@ Run in terminal
 
 #+RESULTS:
 : LineMaps/linesum-O_I-7773-bin032.fits LineMaps/linesum-O_II-7330-bin032.fits
+*** Fuzzing and constant SNR will need to be done on the server
++ This needs the original data cubes, so I can't do it easily on laptop
++ Easiest approach may be to generate a new version of the line list
+**** Selected line list
+This is the lines from the [[id:30F9E738-EE31-4C62-B5CA-CE103485A481][big list]] that we are using in this project
+| Ion    | Class |     wav0 | strength | blue cont | red cont | comment                      |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| O II   | P     |  4641.81 |        4 |         1 |        0 | blend N III + N II           |
+| O II   | P     |  4650.00 |        4 |         1 |        0 | blend 4649.13,50.84          |
+| O II   | P     |  4676.24 |        5 |         1 |        1 | blend with 4673.73           |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| O II   | P     |  5433.49 |        6 |         1 |        1 |                              |
+| O II   | P     |  6501.40 |        7 |         1 |        0 | *** and 6500.83, 6501.42     |
+| O II   | P     |  6509.80 |        7 |         0 |        1 | *** and 6509.711, 6510.61    |
+| O II   | P     |   7340.7 |        5 |         0 |        1 | Or N II 7338.6               |
+| O II   | P     | 7369.029 |        6 |         1 |        0 | blend C II 7370.0            |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| [O II] | M     |  7318.39 |        1 |         1 |        1 | Also 7319.99                 |
+| [O II] | M     |  7329.66 |        1 |         0 |        1 | Also 7330.73                 |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| O I    | L     |  7773.37 |        5 |         1 |        0 | *** Mean 71.94,74.17,75.39   |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| N II   | P     |  4607.16 |        4 |         1 |        1 | blend [Fe III], O II 4609.44 |
+| N II   | P     |  4630.54 |        4 |         1 |        0 |                              |
+| N II   | P     | 4803.287 |        4 |         1 |        1 | blend [Co II] 4802.36        |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| N II   | P     | 5666.629 |        5 |         1 |        1 | multiplet 3  (contam low?)   |
+| N II   | P     |  5676.02 |        6 |         0 |        0 | *** multiplet 3  - no good c |
+| N II   | P     | 5679.558 |        5 |         1 |        1 | multiplet 3                  |
+| N II   | P     |  5686.21 |        6 |         0 |        1 | *** multiplet 3              |
+| N II   | P     |  5711.06 |        6 |         1 |        1 | *** multiplet 3              |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| N II   | P     |  5927.82 |        5 |         1 |        0 | ***                          |
+| N II   | P     |  5931.78 |        4 |         0 |        1 | Blend with 5927.81           |
+| N II   | P     |  5941.65 |        4 |         0 |        1 | Blend with 5940.24           |
+| N II   | P     |  5952.39 |        4 |         1 |        0 | All multiplet 28             |
+
 
 
 ** Maybe even do the Si II lines?
 ** Copying some stuff from linux server
 #+BEGIN_SRC sh :results verbatim
   date
-  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942}.fits LineMaps
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942,Ni_IV-5820}.fits LineMaps
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_III-5007-bin{001,032}.fits LineMaps
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_II-7330-bin{016,032}.fits LineMaps
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/muse-hr-image-wfc3-f547m.fits .
@@ -135,21 +172,20 @@ Run in terminal
 
 #+RESULTS:
 #+begin_example
-Wed Oct 25 02:48:07 CDT 2017
+Wed Oct 25 11:46:30 CDT 2017
+receiving incremental file list
+linesum-Ni_IV-5820.fits
+
+sent 30 bytes  received 9,534,783 bytes  110,229.05 bytes/sec
+total size is 187,764,480  speedup is 19.69
 receiving incremental file list
 
-sent 11 bytes  received 385 bytes  264.00 bytes/sec
-total size is 177,333,120  speedup is 447,810.91
-receiving incremental file list
-
-sent 11 bytes  received 101 bytes  74.67 bytes/sec
+sent 11 bytes  received 101 bytes  44.80 bytes/sec
 total size is 88,099,200  speedup is 786,600.00
 receiving incremental file list
-linesum-O_II-7330-bin016.fits
-linesum-O_II-7330-bin032.fits
 
-sent 49 bytes  received 591,272 bytes  236,528.40 bytes/sec
-total size is 88,099,200  speedup is 148.99
+sent 11 bytes  received 96 bytes  42.80 bytes/sec
+total size is 88,099,200  speedup is 823,357.01
 receiving incremental file list
 
 sent 11 bytes  received 82 bytes  62.00 bytes/sec
