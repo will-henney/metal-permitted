@@ -68,7 +68,7 @@ CLOSED: [2017-10-24 Tue 17:56]
 Can do this on laptop
 #+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
   D=../multibin-maps
-  for line in N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676; do
+  for line in N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773; do
       python $D/multibin-map.py LineMaps/linesum-$line.fits
   done
 #+END_SRC
@@ -88,6 +88,13 @@ Run in terminal
 #+RESULTS:
 : LineMaps/linesum-O_II-4642-bin032.fits LineMaps/linesum-O_III-5007-bin032.fits
 
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py O_I-7773 O_II-7330 linesum bin032
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-O_I-7773-bin032.fits LineMaps/linesum-O_II-7330-bin032.fits
+
 
 ** Maybe even do the Si II lines?
 ** Copying some stuff from linux server
@@ -95,21 +102,27 @@ Run in terminal
   date
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942}.fits LineMaps
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_III-5007-bin{001,032}.fits LineMaps
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_II-7330-bin{016,032}.fits LineMaps
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/muse-hr-image-wfc3-f547m.fits .
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-Wed Oct 25 02:17:23 CDT 2017
+Wed Oct 25 02:48:07 CDT 2017
 receiving incremental file list
 
 sent 11 bytes  received 385 bytes  264.00 bytes/sec
 total size is 177,333,120  speedup is 447,810.91
 receiving incremental file list
-linesum-O_III-5007-bin032.fits
 
-sent 30 bytes  received 335,690 bytes  134,288.00 bytes/sec
-total size is 88,099,200  speedup is 262.42
+sent 11 bytes  received 101 bytes  74.67 bytes/sec
+total size is 88,099,200  speedup is 786,600.00
+receiving incremental file list
+linesum-O_II-7330-bin016.fits
+linesum-O_II-7330-bin032.fits
+
+sent 49 bytes  received 591,272 bytes  236,528.40 bytes/sec
+total size is 88,099,200  speedup is 148.99
 receiving incremental file list
 
 sent 11 bytes  received 82 bytes  62.00 bytes/sec
