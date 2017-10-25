@@ -2,11 +2,38 @@ Attempt to put together all that I have previously done on metal recombination l
 
 * New stuff [2017-10-24 Tue]
 
-** TODO Get line strengths vs (n, T) from Storey (2017)
-
+** Theoretical line strengths
+*** TODO Get O II line strengths vs (n, T) from Storey (2017)
++ They have a fortran program to extract lines from their data base
++ Everything is here: [[file:Storey-2017/]] (but not on GitHub since too big)
+*** TODO N II line strengths from Fang et al (2011)
++ Data is on Vizier:
+  + http://vizier.cfa.harvard.edu/viz-bin/VizieR?-source=J/A+A/530/A18
++ There is a way to directly grab the data files into astropy tables
+  + Example from [[id:37783AC4-74A2-48EC-AE19-006509FEA4F5][Stellar bow shock project]]
+    #+BEGIN_SRC python
+      SOURCE_DIR = 'OB/Kobulnicky2016'
+      source_table = Table.read(
+          os.path.join(SOURCE_DIR, 'table1.dat'),
+          format='ascii.cds',
+          readme=os.path.join(SOURCE_DIR, 'ReadMe')
+      )
+    #+END_SRC
+*** TODO O I recombination line strengths from Pequignot et al (1991)
++ Simple functional fit to effective recombination rates
++ Equation
+  \[
+  \alpha = 10^{{-13}} \, z\,  \frac{a t^{b}}{1 + c t^{d}}
+  \]
++ with \(z\) as ion charge (1 for O I) and \(t = 10^{-4} \, T/z^{2}\)
++ Co-efficients for O I 3s .^{5}S^0 - 3s .^{5}P
+  | Ion | line | Case |     a |      b |     c |     d |  Br | Q |     Y |
+  |-----+------+------+-------+--------+-------+-------+-----+---+-------|
+  | O I | 7773 | A    | 1.983 | -0.630 | 0.971 | 0.573 | 1.0 | B | 1.006 |
+  
 ** TODO Look at O I 7773 recombination line
 + From Jorge García's talk
-+ O I triplet at 7771 + 73 + 74 Ang
++ O I triplet at 7771 + 73 + 74 \AA
 + Supposedly a recombination line
 + I think we have it in the MUSE data
 + This is in wavelength section 5
