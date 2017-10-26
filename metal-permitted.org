@@ -37,6 +37,7 @@ Attempt to put together all that I have previously done on metal recombination l
 + Supposedly a recombination line
 + I think we have it in the MUSE data
 + This is in wavelength section 5
++ [ ] It is also in Adal's slits
 *** DONE First impressions
 CLOSED: [2017-10-24 Tue 17:56]
 + Line clearly detected
@@ -46,9 +47,9 @@ CLOSED: [2017-10-24 Tue 17:56]
     1. Narrow bright bar completely missing
     2. Orion S high-Te region is much weaker (not a surprise)
     3. HH 202 is weaker I think
-*** TODO [1/5] Steps to reduce MUSE 7773 line
+*** TODO [2/5] Steps to reduce MUSE 7773 line
 + [X] Extract line
-+ [ ] Extract line better (turns out there is another line at 7780, which means that we can't get a continuum level on the red side of the line)
++ [X] Extract line better (turns out there is another line at 7780, which means that we can't get a continuum level on the red side of the line)
 + [ ] Deal with night sky component
   + Needs to be done panel by panel
   + Maybe use [O I] 5577 - *no, it is too different*
@@ -95,7 +96,7 @@ CLOSED: [2017-10-24 Tue 17:56]
 Can do this on laptop
 #+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
   D=../multibin-maps
-  for line in Ni_IV-5820 N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773; do
+  for line in Ni_IV-5820 N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773 C_II-6462 C_II-6780; do
       python $D/multibin-map.py LineMaps/linesum-$line.fits
   done
 #+END_SRC
@@ -125,7 +126,14 @@ Run in terminal
 + This needs the original data cubes, so I can't do it easily on laptop
 + Easiest approach may be to generate a new version of the line list
 **** Selected line list
-This is the lines from the [[id:30F9E738-EE31-4C62-B5CA-CE103485A481][big list]] that we are using in this project
+:PROPERTIES:
+:TABLE_EXPORT_FILE: basic-line-list.tab
+:TABLE_EXPORT_FORMAT: orgtbl-to-tsv
+:ID:       B0593798-2E01-499E-965C-1E4A78025834
+:END:
+
++ This is the lines from the [[id:30F9E738-EE31-4C62-B5CA-CE103485A481][big list]] that we are using in this project
++ Write to file with ~C-c t e~
 | Ion    | Class |     wav0 | strength | blue cont | red cont | comment                      |
 |--------+-------+----------+----------+-----------+----------+------------------------------|
 | O II   | P     |  4641.81 |        4 |         1 |        0 | blend N III + N II           |
@@ -157,41 +165,160 @@ This is the lines from the [[id:30F9E738-EE31-4C62-B5CA-CE103485A481][big list]]
 | N II   | P     |  5931.78 |        4 |         0 |        1 | Blend with 5927.81           |
 | N II   | P     |  5941.65 |        4 |         0 |        1 | Blend with 5940.24           |
 | N II   | P     |  5952.39 |        4 |         1 |        0 | All multiplet 28             |
+|--------+-------+----------+----------+-----------+----------+------------------------------|
+| C II   | P     |  6151.43 |        5 |         1 |        0 | V16.04, pure recomb          |
+| C II   | P     |  6461.95 |        6 |         1 |        1 | V17.04 Pure recomb           |
+
++ Ship to server
+#+BEGIN_SRC sh :results verbatim
+  date
+  rsync -avzPL --info=progress0 basic-line-list.tab nil:/fs/nil/other0/will/orion-muse
+#+END_SRC
+
+#+RESULTS:
+: Wed Oct 25 23:39:11 CDT 2017
+: sending incremental file list
+: basic-line-list.tab
+: 
+: sent 247 bytes  received 46 bytes  195.33 bytes/sec
+: total size is 1,028  speedup is 3.51
+
++ Note that this overwrites the big file on the server, so if we want to do all the lines again, we have to [[id:E29DD76D-0B11-4F52-8B50-8967046D2F0C][re-sync]] from the ~OrionMuse~ project
+
+**** DONE Fuzzing the selected lines on server
+CLOSED: [2017-10-25 Wed 23:29]
++ Run this on ~nil~
+  #+BEGIN_SRC sh :eval no
+  python extract-em-line-fuzz.py
+  #+END_SRC
++ [2017-10-25 Wed 17:55] Started running (after fixing bugs)
+  + It is taking a minute or two per emission line, so it will be a while
++ [2017-10-25 Wed 18:35] finished now, in fact a while ago (so it is just over one minute per line, when doing 10 fuzzes)
 
 
+***** DONE Updating ~extract-em-line-fuzz.py~
+CLOSED: [2017-10-25 Wed 17:58]
++ It seems that I made some changes in Dec/Jan 2016/17 to the ways the lines are extracted
+  + This changed the API for some of the utility functions
+  + I removed all the heliocentric part
+  + And replaced it with something simpler
+  + This seems to have been motivated by the line widths project, but I don't remember exactly why
++ Anyhow, upshot is that ~extract-em-line-fuzz.py~ need updating to use new API
+  + I can use as a guide the diffs for ~OrionMuse~ commit ~6b95fea~, where I did equivalent changes to ~extract-em-line.py~
+
+
+**** DONE Multibinning all the fuzzed files
+CLOSED: [2017-10-25 Wed 23:47]
++ Just doing the following to start with 
+  #+BEGIN_EXAMPLE
+  O_I-7773 O_II-4642 O_II-4676 N_II-5667 N_II-5680 C_II-6151 C_II-6462
+  #+END_EXAMPLE
++ Used 
+  #+BEGIN_SRC sh
+  time python $D/multibin-map.py LineMaps/linesum-O_I-7773.fits
+  #+END_SRC
+  and similar to do the base map
++ And 
+  #+BEGIN_SRC sh
+  time sh one-line-fuzz-multibin.sh C_II-6151
+  #+END_SRC
+  for the fuzzed versions
+
+**** DONE Calculate noise and s/n ratio
+CLOSED: [2017-10-26 Thu 09:29]
++ Calculate s/n (example)
+  #+BEGIN_SRC sh
+  time python multibin-signal-to-noise.py linesum-N_II-5680
+  #+END_SRC
++ Generate masks (example for s/n=5)
+  #+BEGIN_SRC sh
+  python multibin-mask-s-n.py linesum-O_I-7773 5
+  #+END_SRC
++ Combine images (example)
+  #+BEGIN_SRC 
+  python multibin-combine-s-n.py linesum-O_I-7773 5  
+  #+END_SRC
++ Copy them to laptop (example)
+  #+BEGIN_SRC sh
+  rsync -avzPL nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_I-7773-multibin-SN*.fits LineMaps  
+  #+END_SRC
++ This is really calling out to be better automated
+
+
+**** TODO Do the same for ratios
 
 ** Maybe even do the Si II lines?
 ** Copying some stuff from linux server
 #+BEGIN_SRC sh :results verbatim
   date
-  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942,Ni_IV-5820}.fits LineMaps
-  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_III-5007-bin{001,032}.fits LineMaps
-  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-O_II-7330-bin{016,032}.fits LineMaps
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942,C_II-6462}.fits LineMaps
+  rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_III-5007,O_II-7330,C_II-7231,C_II-7236}-bin{004,008,016,032}.fits LineMaps
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/muse-hr-image-wfc3-f547m.fits .
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-Wed Oct 25 11:46:30 CDT 2017
-receiving incremental file list
-linesum-Ni_IV-5820.fits
-
-sent 30 bytes  received 9,534,783 bytes  110,229.05 bytes/sec
-total size is 187,764,480  speedup is 19.69
+Wed Oct 25 19:59:43 CDT 2017
 receiving incremental file list
 
-sent 11 bytes  received 101 bytes  44.80 bytes/sec
-total size is 88,099,200  speedup is 786,600.00
+sent 11 bytes  received 410 bytes  168.40 bytes/sec
+total size is 187,764,480  speedup is 445,996.39
+receiving incremental file list
+linesum-C_II-7231-bin004.fits
+linesum-C_II-7231-bin008.fits
+linesum-C_II-7231-bin016.fits
+linesum-C_II-7231-bin032.fits
+linesum-C_II-7236-bin004.fits
+linesum-C_II-7236-bin008.fits
+linesum-C_II-7236-bin016.fits
+linesum-C_II-7236-bin032.fits
+linesum-O_II-7330-bin004.fits
+linesum-O_II-7330-bin008.fits
+linesum-O_III-5007-bin004.fits
+linesum-O_III-5007-bin008.fits
+linesum-O_III-5007-bin016.fits
+
+sent 258 bytes  received 7,091,003 bytes  429,773.39 bytes/sec
+total size is 704,793,600  speedup is 99.39
 receiving incremental file list
 
-sent 11 bytes  received 96 bytes  42.80 bytes/sec
-total size is 88,099,200  speedup is 823,357.01
-receiving incremental file list
-
-sent 11 bytes  received 82 bytes  62.00 bytes/sec
+sent 11 bytes  received 82 bytes  37.20 bytes/sec
 total size is 10,558,080  speedup is 113,527.74
 #+end_example
 
+* Possible explanations for ADF, etc
++ Note that ADF, t-squared and T_{4363/5007} - T_{V1/5007} are all the same thing observationally 
++ Recombination rate inaccuracies
+  + Gary is very keen on this
+  + Says that nobody understands DR properly
+  + Something about the levels below (or was it above?) threshold that are not being accounted for (not sure exactly what he said)
+  + Says that "someone or other" agrees with him (presumably a famous atomic physicist, but I don't remember the name)
+  + Seems to me that this can only explain a wholesale shift in the ADF values, and not spatial variations in them
++ Fluorescence contribution
+  + Vladimir has some calculations I think
+  + This is certainly seen in the C II V3 multiplet: 7231, 36 lines
+    + Should compare with the 6462 line, which is the best-looking of all the pure-recombination C II lines in MUSE
+      + We can subtract a scaled 6462 from the 7231 and 7236 so we just leave the fluorescent contribution
+      + Then we can do the same but subtracting scaled 5007 from 4651
+        + Although the latter needs to be corrected for temperature since it is a CEL
+    + Although Manu and Adal has 4267, which is much better
++ Metallicity variations
+  + There will be slight enhancements in O when grains are destroyed
+    + For instance, Adal's work on HH 202
+    + Also, newer stuff by José Espíritu, Gloria Delgado, Antonio P
+    + Also, earlier Adal 2008 paper had something similar for HH 203/204
+    + This should give correlation with Fe enhancement
+      + So need to find a line ratio that is diagnostic of Fe abundance
+      + This is difficult because most ratios are more sensitive to ionization
+      + In the Manu work I had tried [Fe III] / ([S II] + [S III]) which worked OK
++ Underlying stellar absorption lines
+  + Scattered light gives about half the continuum in Orion, so any stellar absorption lines will show up in the nebula, and might reduce the apparent strength of weak emission lines
+  + This is particularly a problem for the O II lines, since they are quite strong in absorption in the O star spectra
+    + Especially the O9/B0 stars: \theta^2 A, \theta^1 A and D, where O II 4651 is similar absorption depth to He II 4686, or about 0.1
+    + In \theta^1 C, it is not so bad: depth of about 0.06 in He II 4686 (but depends on orbital phase!) and 0.03 in the O II lines
+      + Note that Adal's spectra show *zero* He II 4686 absorption, weirdly
+    + In the nebula, this is down to 0.04 for He II (presumably because of dilution)
+    + Which implies 0.02 for O II, which is around 5-10% of the O II emission lines
 
 * Guide to all my previous work
 + Figures that I am gathering from other places are in [[file:copied-figs/]] 

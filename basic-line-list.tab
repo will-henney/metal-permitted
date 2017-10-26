@@ -1,0 +1,26 @@
+Ion	Class	wav0	strength	blue cont	red cont	comment
+O II	P	4641.81	4	1	0	blend N III + N II
+O II	P	4650.00	4	1	0	blend 4649.13,50.84
+O II	P	4676.24	5	1	1	blend with 4673.73
+O II	P	5433.49	6	1	1	
+O II	P	6501.40	7	1	0	*** and 6500.83, 6501.42
+O II	P	6509.80	7	0	1	*** and 6509.711, 6510.61
+O II	P	7340.7	5	0	1	Or N II 7338.6
+O II	P	7369.029	6	1	0	blend C II 7370.0
+[O II]	M	7318.39	1	1	1	Also 7319.99
+[O II]	M	7329.66	1	0	1	Also 7330.73
+O I	L	7773.37	5	1	0	*** Mean 71.94,74.17,75.39
+N II	P	4607.16	4	1	1	blend [Fe III], O II 4609.44
+N II	P	4630.54	4	1	0	
+N II	P	4803.287	4	1	1	blend [Co II] 4802.36
+N II	P	5666.629	5	1	1	multiplet 3  (contam low?)
+N II	P	5676.02	6	0	0	*** multiplet 3  - no good c
+N II	P	5679.558	5	1	1	multiplet 3
+N II	P	5686.21	6	0	1	*** multiplet 3
+N II	P	5711.06	6	1	1	*** multiplet 3
+N II	P	5927.82	5	1	0	***
+N II	P	5931.78	4	0	1	Blend with 5927.81
+N II	P	5941.65	4	0	1	Blend with 5940.24
+N II	P	5952.39	4	1	0	All multiplet 28
+C II	P	6151.43	5	1	0	V16.04, pure recomb
+C II	P	6461.95	6	1	1	V17.04 Pure recomb
