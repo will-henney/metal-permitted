@@ -2,6 +2,33 @@ Attempt to put together all that I have previously done on metal recombination l
 
 * New stuff [2017-10-24 Tue]
 
+** What are the advantages/disadvantages of each dataset?
++ Spectral range
+  + Blue
+    + Manu best (from 3600 \AA)
+    + Adal from 4250 \AA
+    + MUSE from 4600 \AA
+  + Red
+    + MUSE best (to 9300 \AA)
+    + Adal up to 7000 \AA
+    + Manu up to 6800 \AA
++ Spectral resolution
+  + Adal best: resolve N II from O II from N III @ 4642 \AA
+  + Manu next
+  + MUSE worst
++ Spatial coverage
+  + MUSE best (full field)
+  + Manu next -
+  + Adal worst - limited to 6 longslit positions
++ Spatial resolution
+  + MUSE best (sub-arcsec)
+    + But often necessary to degrade in order to achieve good s/n
+  + Adal next (about 1 arcsec)
+  + Manu worst (fiber spacing about 3 arcsec)
++ Signal-to-noise
+  + Manuel best (I think)
+  + MUSE worst
+
 ** Theoretical line strengths
 *** TODO Get O II line strengths vs (n, T) from Storey (2017)
 + They have a fortran program to extract lines from their data base
@@ -47,17 +74,190 @@ CLOSED: [2017-10-24 Tue 17:56]
     1. Narrow bright bar completely missing
     2. Orion S high-Te region is much weaker (not a surprise)
     3. HH 202 is weaker I think
-*** TODO [2/5] Steps to reduce MUSE 7773 line
+*** TODO [4/5] Steps to reduce MUSE 7773 line
 + [X] Extract line
 + [X] Extract line better (turns out there is another line at 7780, which means that we can't get a continuum level on the red side of the line)
 + [ ] Deal with night sky component
   + Needs to be done panel by panel
   + Maybe use [O I] 5577 - *no, it is too different*
   + Work from outside \to inside and look for jumps between tiles
-+ [ ] Multi-binning
-+ [ ] Fuzzing
+  + Now has its own [[id:7B9FD891-B48F-47D7-AB5A-BC65724FA5C7][section]]
++ [X] Multi-binning
++ [X] Fuzzing
   + (or is that really necessary?)
   + might be, if we want to take ratios
+** TODO Remove night sky from MUSE O I 7773
+:PROPERTIES:
+:ID:       7B9FD891-B48F-47D7-AB5A-BC65724FA5C7
+:END:
++ This is a bit similar to the pattern noise reduction that I did for the line width project, as described in [[file:~/Dropbox/depattern-maps/]]
++ One possibility is to plot velocity against brightness for each tile and fit a model that is
+  + V(B) = B_sky V_sky + V_neb (B - B_sky)
+  + V, B are observed velocity, brightness in each pixel
+  + V_sky is the velocity of sky component (0 km/s topocentric)
+  + V_neb is the mean nebular velocity (about 25 km/s heliocentric for low ionization zone)
+    + We could either take this constant over all tiles ...
+    + ... or even take it from the red [O II] lines
+  + B_sky is *what we solve for* in each tile
++ Simpler solution would be to look for a constant to subtract from each tile
+  + Try this first
+
+#+BEGIN_SRC python :eval no :tangle sky-tile-hist.py
+  import sys
+  import os
+  import numpy as np
+  from astropy.io import fits
+  from astropy.modeling import models, fitting
+  from matplotlib import pyplot as plt
+  import seaborn as sns
+
+  try: 
+      infile = sys.argv[1]
+  except:
+      sys.exit('Usage: {} FITSFILE'.format(sys.argv[0]))
+
+
+  basename = os.path.basename(infile)
+  baseroot, _ = os.path.splitext(basename)
+  figfile = f"{sys.argv[0]}-{baseroot}.pdf"
+
+  hdu = fits.open(infile)[0]
+  if hdu.data is None:
+      hdu = fits.open(infile)[1]
+  hdr = hdu.header
+
+  ny, nx = hdu.data.shape
+
+  # Size of chunks
+  mx, my = 290, 290
+  xchunks, ychunks = nx//mx, ny//my
+
+
+  fig, axes = plt.subplots(ychunks, xchunks,
+                           sharex=True, sharey=True,
+                           figsize=(10, 10),
+  )
+
+
+  hdu.data /= 1000.0
+
+  m = np.isfinite(hdu.data)
+  vmin, vmax = np.percentile(hdu.data[m], [1.0, 99.0])
+  vrange = vmax - vmin
+  vmin -= 0.3*vrange
+  vmax += 0.3*vrange
+
+  m = m & (hdu.data >= vmin) & (hdu.data <= vmax)
+
+  fitter = fitting.LevMarLSQFitter()
+  for jchunk in range(ychunks):
+      yslice = slice(jchunk*my, jchunk*my + my)
+      for ichunk in range(xchunks):
+          xslice = slice(ichunk*mx, ichunk*mx + mx)
+
+          mm = m[yslice, xslice]
+          tile = hdu.data[yslice, xslice][mm]
+          ax = axes[ychunks - jchunk - 1, ichunk]
+          hist, edges, _ = ax.hist(tile, bins=100, range=[vmin, vmax])
+          centers = 0.5*(edges[:-1] + edges[1:])
+
+
+          a0 = hist.max()
+          v0 = np.mean(tile)
+          vmedian = np.median(tile)
+          s0 = np.std(tile)
+          g_init = models.Gaussian1D(amplitude=a0, mean=v0, stddev=s0)
+          select = hist > 0.3*a0
+          g = fitter(g_init, centers[select], hist[select])
+          ax.plot(centers, g(centers), c='r', lw=0.5)
+          # ax.plot(centers, g_init(centers), c='g')
+
+          ax.axvline(0.0, c='k', alpha=0.5)
+          ax.axvline(vmedian, c='r', alpha=1.0)
+
+          s = f"peak = {g.mean.value:.2f}\nstd = {g.stddev.value:.2f}"
+          ax.text(0.95, 0.95, s,
+                  ha='right', va='top',
+                  fontsize='xx-small',
+                  transform=ax.transAxes)
+
+  fig.savefig(figfile)
+  print(figfile, end='')
+#+END_SRC
+
+#+BEGIN_SRC sh :results file
+python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
+#+END_SRC
+
+#+RESULTS:
+[[file:sky-tile-hist.py-linesum-O_I-7773.pdf]]
+
++ That seems to work well
++ Dark tiles (no nebula) should have std \approx 3 
++ Decisions by row
+  + First row all look the same, so use left one (dark on other maps)
+    + Actually better to linearly interpolate between two ends
+  + Second row all same except last one that is lower
+  + Third row all same except last that is brighter
+    + But first tile has some nebula in it
+      + Perhaps I should use 1.5 instead of 1.76
+      + But not for the moment
+  + Fourth row has clear step pattern on right, but first 3 look the same
+    + Again there is problem that there is nebula in them
+  + Fifth row also linear progression
++ So this is the table that I come up with
+  + Have to remember to flip the y-axis when applying to the image
++ That worked ok, but I am going to make some hand adjustments
+  + Subtracted 0.1 from all top row since I seemed to over subtract there
+  + Same for last one on 2nd row
+  + Third row over-subtracting first 5
+  + Fourth row tiles 3 and 4 are over subtracted
+  + Last row is fine
+
+#+name: sky-tiles-7773
+| 1.92 | 2.04 | 2.16 | 2.28 | 2.40 | 2.52 |
+| 2.87 | 2.87 | 2.87 | 2.87 | 2.87 | 2.21 |
+| 1.66 | 1.66 | 1.66 | 1.66 | 1.66 | 2.52 |
+| 2.43 | 2.43 | 1.66 | 0.81 | 1.93 | 2.25 |
+| 2.64 | 2.70 | 2.76 | 2.82 | 2.88 | 2.94 |
+
+#+header: :var skytab=sky-tiles-7773 mapname="linesum-O_I-7773"
+#+BEGIN_SRC python
+  import numpy as np
+  from astropy.io import fits
+
+  infile = f"LineMaps/{mapname}.fits"
+
+  hdu = fits.open(infile)[0]
+  if hdu.data is None:
+      hdu = fits.open(infile)[1]
+  hdr = hdu.header
+
+  ny, nx = hdu.data.shape
+
+  # Size of chunks
+  mx, my = 290, 290
+  xchunks, ychunks = nx//mx, ny//my
+
+  for jchunk in range(ychunks):
+      yslice = slice(jchunk*my, jchunk*my + my)
+      for ichunk in range(xchunks):
+          xslice = slice(ichunk*mx, ichunk*mx + mx)
+
+          skylevel = 1000.0*skytab[ychunks - jchunk - 1][ichunk]
+
+          hdu.data[yslice, xslice] -= skylevel
+
+  hdu.writeto(infile.replace('.fits', '-nosky.fits'), overwrite=True)
+#+END_SRC
+
+#+RESULTS:
+: None
+
++ OK, that /looks/ like it worked OK
++ There still might be a problem with the fourth row
+  + We will see when we take the ratio
+
 ** TODO Looking at all the MUSE O II and N II lines
 + These are in better shape than I thought
 + We should be able to get the O II V1 multiplet in three parts:
@@ -92,40 +292,11 @@ CLOSED: [2017-10-24 Tue 17:56]
         + [X] Ratio needs maps to be binned
         + I get a gradient from about 1.7 to 1.4 from center to outskirt of the nebula.  But I have to bin it an awful lot
   + 5942 is clearly different and may have fluorescent component
-*** Doing the multibinning in situ
-Can do this on laptop
-#+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
-  D=../multibin-maps
-  for line in Ni_IV-5820 N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773 C_II-6462 C_II-6780; do
-      python $D/multibin-map.py LineMaps/linesum-$line.fits
-  done
-#+END_SRC
-Run in terminal
-
-#+BEGIN_SRC sh
-  python ../OrionMuse/muse_line_ratio.py N_II-5680 N_II-5667 linesum bin256
-#+END_SRC
-
-#+RESULTS:
-: LineMaps/linesum-N_II-5680-bin256.fits LineMaps/linesum-N_II-5667-bin256.fits
-
-#+BEGIN_SRC sh
-  python ../OrionMuse/muse_line_ratio.py O_II-4642 O_III-5007 linesum bin032
-#+END_SRC
-
-#+RESULTS:
-: LineMaps/linesum-O_II-4642-bin032.fits LineMaps/linesum-O_III-5007-bin032.fits
-
-#+BEGIN_SRC sh
-  python ../OrionMuse/muse_line_ratio.py O_I-7773 O_II-7330 linesum bin032
-#+END_SRC
-
-#+RESULTS:
-: LineMaps/linesum-O_I-7773-bin032.fits LineMaps/linesum-O_II-7330-bin032.fits
-*** Fuzzing and constant SNR will need to be done on the server
+*** [4/5] Fuzzing and constant SNR will need to be done on the server
 + This needs the original data cubes, so I can't do it easily on laptop
 + Easiest approach may be to generate a new version of the line list
-**** Selected line list
+**** DONE Selected line list
+CLOSED: [2017-10-26 Thu 09:41]
 :PROPERTIES:
 :TABLE_EXPORT_FILE: basic-line-list.tab
 :TABLE_EXPORT_FORMAT: orgtbl-to-tsv
@@ -183,7 +354,7 @@ Run in terminal
 : sent 247 bytes  received 46 bytes  195.33 bytes/sec
 : total size is 1,028  speedup is 3.51
 
-+ Note that this overwrites the big file on the server, so if we want to do all the lines again, we have to [[id:E29DD76D-0B11-4F52-8B50-8967046D2F0C][re-sync]] from the ~OrionMuse~ project
++ Note that this overwrites the big file on the server with this small one, so if we want to do the long list of lines again, we have to [[id:E29DD76D-0B11-4F52-8B50-8967046D2F0C][re-sync]] from the ~OrionMuse~ project
 
 **** DONE Fuzzing the selected lines on server
 CLOSED: [2017-10-25 Wed 23:29]
@@ -246,9 +417,39 @@ CLOSED: [2017-10-26 Thu 09:29]
 
 
 **** TODO Do the same for ratios
+*** DONE Initial work on MUSE lines
+CLOSED: [2017-10-26 Thu 10:58]
+**** Doing the multibinning in situ
+Can do this on laptop
+#+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
+  D=../multibin-maps
+  for line in Ni_IV-5820 N_II-5680 N_II-5667 N_II-5942 O_II-4642 O_II-4676 O_I-7773 C_II-6462 C_II-6780; do
+      python $D/multibin-map.py LineMaps/linesum-$line.fits
+  done
+#+END_SRC
+Run in terminal
 
-** Maybe even do the Si II lines?
-** Copying some stuff from linux server
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py N_II-5680 N_II-5667 linesum bin256
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-N_II-5680-bin256.fits LineMaps/linesum-N_II-5667-bin256.fits
+
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py O_II-4642 O_III-5007 linesum bin032
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-O_II-4642-bin032.fits LineMaps/linesum-O_III-5007-bin032.fits
+
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py O_I-7773 O_II-7330 linesum bin032
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-O_I-7773-bin032.fits LineMaps/linesum-O_II-7330-bin032.fits
+**** Copying some stuff from linux server
 #+BEGIN_SRC sh :results verbatim
   date
   rsync -avzPL --info=progress0 nil:/fs/nil/other0/will/orion-muse/LineMaps/linesum-{O_II-4642,O_II-4650,O_II-4676,O_I-7773,O_II-5433,O_II-6501,O_II-6510,O_II-7318,O_II-7330,O_II-7341,O_II-7369,N_II-4607,N_II-4631,N_II-4803,N_II-5667,N_II-5680,N_II-5942,C_II-6462}.fits LineMaps
@@ -286,6 +487,11 @@ sent 11 bytes  received 82 bytes  37.20 bytes/sec
 total size is 10,558,080  speedup is 113,527.74
 #+end_example
 
+** Maybe even do the Si II lines?
+
+** TODO Finishing off the Manu data analysis
+
+** TODO Finishing off the Adal data analysis
 * Possible explanations for ADF, etc
 + Note that ADF, t-squared and T_{4363/5007} - T_{V1/5007} are all the same thing observationally 
 + Recombination rate inaccuracies
