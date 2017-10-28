@@ -2,6 +2,24 @@ Attempt to put together all that I have previously done on metal recombination l
 
 * New stuff [2017-10-24 Tue]
 
+
+** Renaming the multibin project?
++ SAOImage DS9 uses /block/ instead of /bin/, so maybe we should use that
++ One possibility is *binblock* For *bin*-ary *block*-ing
++ That way we have the best of both worlds
++ Or *quadblock* or *tetrablock*
+  + I like the second - combination of tetrapack and megablock
+  + Reflects fact that each block level is by 2x2
+  + And strangely, there are not many things called tetrablock
+** Who to include in project
++ If interested
+  + Michael Richer
+  + César 
+  + Jorge García
+  + Ana Monreal-Ibero
+  + Grazyna?
+  + Gary?
+
 ** What are the advantages/disadvantages of each dataset?
 + Spectral range
   + Blue
@@ -65,6 +83,12 @@ Attempt to put together all that I have previously done on metal recombination l
 + I think we have it in the MUSE data
 + This is in wavelength section 5
 + [ ] It is also in Adal's slits
++ Strangely, the MUSE maps show it strong from some proplyds and other stars
+  + Maybe it is a strong line in T Tauri stars
+  + Best detection is in 159-350, where it is very strong and with an absorption on its red wing at 7780 \AA
+    + Perhaps it is an inverse P Cygni profile - would require 270 km/s infall, which is a bit high
+    + or maybe there is another photospheric line at 7780 \AA
+    + I should check on Adal's slit - I think he crosses this star
 *** DONE First impressions
 CLOSED: [2017-10-24 Tue 17:56]
 + Line clearly detected
@@ -77,16 +101,18 @@ CLOSED: [2017-10-24 Tue 17:56]
 *** TODO [4/5] Steps to reduce MUSE 7773 line
 + [X] Extract line
 + [X] Extract line better (turns out there is another line at 7780, which means that we can't get a continuum level on the red side of the line)
-+ [ ] Deal with night sky component
++ [X] Deal with night sky component
   + Needs to be done panel by panel
   + Maybe use [O I] 5577 - *no, it is too different*
   + Work from outside \to inside and look for jumps between tiles
   + Now has its own [[id:7B9FD891-B48F-47D7-AB5A-BC65724FA5C7][section]]
 + [X] Multi-binning
-+ [X] Fuzzing
-  + (or is that really necessary?)
-  + might be, if we want to take ratios
-** TODO Remove night sky from MUSE O I 7773
+  + [X] Repeat for new sky subtraction
++ [ ] Fuzzing
+  + [ ] Repeat for new sky subtraction
+  + Need to ship to server
+** DONE Remove night sky from MUSE O I 7773
+CLOSED: [2017-10-27 Fri 19:15]
 :PROPERTIES:
 :ID:       7B9FD891-B48F-47D7-AB5A-BC65724FA5C7
 :END:
@@ -218,7 +244,7 @@ python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
 | 1.92 | 2.04 | 2.16 | 2.28 | 2.40 | 2.52 |
 | 2.87 | 2.87 | 2.87 | 2.87 | 2.87 | 2.21 |
 | 1.66 | 1.66 | 1.66 | 1.66 | 1.66 | 2.52 |
-| 2.43 | 2.43 | 1.66 | 0.81 | 1.93 | 2.25 |
+| 2.43 | 2.93 | 1.66 | 0.81 | 1.93 | 2.25 |
 | 2.64 | 2.70 | 2.76 | 2.82 | 2.88 | 2.94 |
 
 #+header: :var skytab=sky-tiles-7773 mapname="linesum-O_I-7773"
@@ -236,17 +262,21 @@ python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
   ny, nx = hdu.data.shape
 
   # Size of chunks
-  mx, my = 290, 290
+  mx, my = 292, 292
   xchunks, ychunks = nx//mx, ny//my
+  # Margin of unused pixels
+  marginx, marginy = 4, 2
 
   for jchunk in range(ychunks):
-      yslice = slice(jchunk*my, jchunk*my + my)
+      yslice = slice(jchunk*my + marginy, jchunk*my + marginy + my)
       for ichunk in range(xchunks):
-          xslice = slice(ichunk*mx, ichunk*mx + mx)
-
+          xslice = slice(ichunk*mx + marginx, ichunk*mx + marginx + mx)
           skylevel = 1000.0*skytab[ychunks - jchunk - 1][ichunk]
-
           hdu.data[yslice, xslice] -= skylevel
+
+  # Mask out scar artefacts
+  hdu.data[292:302, 580:] = np.nan
+  hdu.data[870:877, 300:1380] = np.nan
 
   hdu.writeto(infile.replace('.fits', '-nosky.fits'), overwrite=True)
 #+END_SRC
@@ -255,8 +285,57 @@ python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
 : None
 
 + OK, that /looks/ like it worked OK
+  + File has a ~-nosky~ suffix
 + There still might be a problem with the fourth row
   + We will see when we take the ratio
++ [2017-10-28 Sat] I think my chunks aren't quite lined up right
+  + It gives a box pattern in the subtracted image
+  + It looks like the full field is 1754 x 1462
+    + 1754 / 6 = 292 rem 2
+    + 1464 / 5 = 292 rem 4
+  + Whereas we were using 290 for the chunk size
+    + [X] /So, try using 292 instead/
+    + Also, we should start at (4, 2) because there is a border of NaNs
+  + That works better, but we still have a couple of horizontal artefacts: I will call them *scars*
+    + These are present on the original image, and are at boundaries between chunks, but they aren't due to something I have done
+    + I can remove them later by interpolating, or by just masking them out when I do the binning
+      + [X] Actually, best to mask it out now and replace with NaN
+      + Lower linear scar is [yslice, xslice] = [282:316, 580:]
+      + Upper linear scar is [yslice, xslice] = [862:885, 300:1380]
+
+** TODO Redo the fuzzing and binning for the sky-subtracted line
++ How are we going to do that with the fuzzing?
+  + We could make a correction file by subtracting the ~nosky~ version from the original
+  + And then we could make the programs always look for a correction file and apply it (if it exists) before doing binning and fuzzing
++ First we just to the line itself
+  #+BEGIN_SRC sh :results verbatim
+    D=../multibin-maps
+    time python $D/multibin-map.py LineMaps/linesum-O_I-7773-nosky.fits
+  #+END_SRC
+
+  #+RESULTS:
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin001.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin002.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin004.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin008.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin016.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin032.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin064.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin128.fits
+  : Saving LineMaps/linesum-O_I-7773-nosky-bin256.fits
++ And have a first look at ratio
+  #+BEGIN_SRC sh :results verbatim
+    python ../OrionMuse/muse_line_ratio.py O_I-7773-nosky O_II-7330 linesum bin016
+  #+END_SRC
+
+  #+RESULTS:
+  : LineMaps/linesum-O_I-7773-nosky-bin016.fits LineMaps/linesum-O_II-7330-bin016.fits
++ This looks great - it is very similar to the [N II] temperature
+  + Here is a [[file:Screenshot%202017-10-28%2015.48.41.png][screenshot]]
+  + In the bar, the T increase is on neutral side of i-front
++ Next question, what is theoretical value?
+
+
 
 ** TODO Looking at all the MUSE O II and N II lines
 + These are in better shape than I thought
