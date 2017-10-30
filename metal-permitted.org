@@ -211,8 +211,18 @@ python oplus-ratio-contour.py
   + Then, above 1e6 pcc, the collisional de-excitation kicks in and 7330 goes down again
 
 
-+ And repeat for the 7320 line, instead of 7330
-#+BEGIN_SRC python :eval no :tangle oplus-alt-ratio-contour.py
++ I repeated for the 7320 line, instead of 7330, but it is extremely similar
+  + So, I am not showing it any more
+
+
+*** We can also look at density from [Fe III] 4702/4658
+
++ The map goes between about 0.2 and 0.4
++ The high ratios are fine, corresponding to about 3e4 pcc
++ But the low ratios are less than theoretical low-density limit, which is more like 0.25
+  + Could be that sky subtraction matters
+  + Or could be that A-values are not right
+#+BEGIN_SRC python :eval no :tangle fe3-ratio-contour.py
   from __future__ import print_function
   import sys
   import numpy as np
@@ -221,41 +231,39 @@ python oplus-ratio-contour.py
   import matplotlib as mpl
   import seaborn as sns
 
-  o1r = pn.RecAtom('O', 1, case='A')
-  o2c = pn.Atom('O', 2)
+  fe3 = pn.Atom('Fe', 3)
 
-  Ts = np.linspace(3000, 25000, 300)
-  Ds = 10**np.linspace(0.0, 9.0, 200)
+  Ts = np.linspace(4000, 20000, 100)
+  Ds = 10**np.linspace(1.0, 5.0, 200)
 
-  def ratio_7773_7320(tem, den):
-      em7320 = o2c.getEmissivity(tem, den, wave=7318.92)
-      em7320 += o2c.getEmissivity(tem, den, wave=7319.98)
-      em7773 = o1r.getEmissivity(tem, den, label='7773+')
-      return em7773/em7320
+  def ratio_4702_4658(tem, den):
+      em4702 = fe3.getEmissivity(tem, den, wave=4701.53)
+      em4658 = fe3.getEmissivity(tem, den, wave=4658.05)
+      return em4702/em4658
 
 
   figfile = sys.argv[0].replace('.py', '.pdf')
 
-  ratios = ratio_7773_7320(Ts, Ds).T
-  levels = [3.0, 1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003]
-  fig, ax = plt.subplots()
+  ratios = ratio_4702_4658(Ts, Ds)
+  levels = np.linspace(0.24, 0.40, 17)
+  fig, ax = plt.subplots(figsize=(6, 6))
 
-  Ts = Ts[None, :]*np.ones_like(ratios)
-  Ds = Ds[:, None]*np.ones_like(ratios)
+  Ts = Ts[:, None]*np.ones_like(ratios)
+  Ds = Ds[None, :]*np.ones_like(ratios)
 
   #ax.contour(Ts, Ds, Ds, levels=[100, 10000, 1e6], cmap='magma_r')
-  c = ax.contour(Ts, Ds, ratios,
-                 levels=levels[::-1],
-                 cmap='magma_r',
-                 norm=mpl.colors.LogNorm())
-  ax.clabel(c, levels[1::2], fontsize='x-small',
-            inline=False)
-  ax.legend(ncol=2)
+  c = ax.contour(Ds, Ts, ratios,
+                 levels=levels,
+                 cmap='tab20b_r', linewidths=3)
+  # ax.clabel(c, levels[1::2], fontsize='x-small',
+  #           inline=False, rightside_up=True, use_clabeltext=True)
+  cb = fig.colorbar(c, orientation='horizontal')
+  cb.set_label("[Fe III] 4702 / 4658")
 
   ax.set(
-      xlabel="Temperature, K",
-      ylabel="Density, [cc]",
-      yscale='log',
+      ylabel="Temperature, K",
+      xlabel="Density, cm$^{-3}$",
+      xscale='log',
   )
   sns.despine()
   fig.tight_layout()
@@ -265,14 +273,11 @@ python oplus-ratio-contour.py
 
 #+BEGIN_SRC sh :results file
 source activate pyneb27
-python oplus-alt-ratio-contour.py
+python fe3-ratio-contour.py
 #+END_SRC
 
 #+RESULTS:
-[[file:oplus-alt-ratio-contour.pdf]]
-
-+ This is extremely similar
-
+[[file:fe3-ratio-contour.pdf]]
 
 ** TODO Look at O I 7773 recombination line
 + From Jorge García's talk
@@ -532,8 +537,42 @@ python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
   + Here is a [[file:Screenshot%202017-10-28%2015.48.41.png][screenshot]]
   + In the bar, the T increase is on neutral side of i-front
 + Next question, what is [[id:01887326-EFF3-4C42-ABEB-9EC5056B0947][theoretical value]]?
+  + That is now done
 
++ Here, we make the ~-correction.fits~ file
+#+header: :var mapname="linesum-O_I-7773"
+#+BEGIN_SRC python
+  import numpy as np
+  from astropy.io import fits
 
+  infile = f"LineMaps/{mapname}.fits"
+
+  hdu = fits.open(infile)[0]
+  hdu_nosky = fits.open(infile.replace(".fits", "-nosky.fits"))[0]
+  hdu.data -= hdu_nosky.data
+  hdu.writeto(infile.replace('.fits', '-correction.fits'), overwrite=True)
+#+END_SRC
+
+#+RESULTS:
+: None
+
++ [X] Modify the fuzzing program to use the ~-correction.fits~ file
++ [X] Copy ~-correction.fits~ file to server
+  #+BEGIN_SRC sh :results verbatim
+  rsync -avzPL LineMaps/linesum-O_I-7773-correction.fits nil:/fs/nil/other0/will/orion-muse/LineMaps
+  #+END_SRC
+
+  #+RESULTS:
+  : sending incremental file list
+  : 
+  : sent 79 bytes  received 11 bytes  180.00 bytes/sec
+  : total size is 10,431,360  speedup is 115,904.00
+
++ [X] re-run it all for this line
+  #+BEGIN_SRC sh :eval no
+  time python extract-em-line-fuzz.py 7773 10  
+  #+END_SRC
++ [ ] And do the ratio
 
 ** TODO Looking at all the MUSE O II and N II lines
 + These are in better shape than I thought
