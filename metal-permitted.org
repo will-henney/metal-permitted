@@ -64,7 +64,11 @@ Attempt to put together all that I have previously done on metal recombination l
           readme=os.path.join(SOURCE_DIR, 'ReadMe')
       )
     #+END_SRC
-*** TODO O I recombination line strengths from Pequignot et al (1991)
+*** DONE O I recombination line strengths from Pequignot et al (1991)
+CLOSED: [2017-10-28 Sat 15:59]
+:PROPERTIES:
+:ID:       01887326-EFF3-4C42-ABEB-9EC5056B0947
+:END:
 + Simple functional fit to effective recombination rates
 + Equation
   \[
@@ -75,7 +79,201 @@ Attempt to put together all that I have previously done on metal recombination l
   | Ion | line | Case |     a |      b |     c |     d |  Br | Q |     Y |
   |-----+------+------+-------+--------+-------+-------+-----+---+-------|
   | O I | 7773 | A    | 1.983 | -0.630 | 0.971 | 0.573 | 1.0 | B | 1.006 |
-  
+
+
+*** [O II] collisional line strengths
++ Use ~pyneb~ I guess
++ Strangely, the emission coefficients increase with density, according to pyneb
++ [X] ~pyneb~ still works better with python 2.7
+  + With python 3 there are some bugs with the O I recomb spectrum
+  + I have installed an anaconda environment ~pyneb27~ to hold it
+    : python=2.7 ipython=5.4
++ Here is a plot of ratio against T for varying density
+#+BEGIN_SRC python :eval no :tangle oplus-ratio-plot.py
+  from __future__ import print_function
+  import sys
+  import numpy as np
+  import pyneb as pn
+  import matplotlib.pyplot as plt
+  import seaborn as sns
+
+  o1r = pn.RecAtom('O', 1, case='A')
+  o2c = pn.Atom('O', 2)
+
+  Ts = np.linspace(5000, 15000)
+  Ds = 10**np.linspace(0.0, 7.0, 8)
+
+  def ratio_7773_7330(tem, den):
+      em7330 = o2c.getEmissivity(tem, den, wave=7330.73)
+      em7330 += o2c.getEmissivity(tem, den, wave=7329.66)
+      em7773 = o1r.getEmissivity(tem, den, label='7773+')
+      return em7773/em7330
+
+
+  figfile = sys.argv[0].replace('.py', '.pdf')
+  nD = len(Ds)
+  sns.set_palette('magma_r', n_colors=nD)
+  lws = np.linspace(2.0, 0.5, nD)
+  fig, ax = plt.subplots()
+
+  for D, lw in zip(Ds, lws):
+      dstring = str(np.log10(D))
+      label = r"$n = 10^{" + dstring + r"}\ \mathrm{cm}^{-3}$"
+      ax.plot(Ts, ratio_7773_7330(Ts, D), lw=lw, label=label)
+
+  ax.legend(ncol=2)
+
+  ax.set(
+      xlabel="Temperature, K",
+      ylabel="O I 7773 / [O II] 7330",
+      yscale='log',
+  )
+  sns.despine()
+  fig.tight_layout()
+  fig.savefig(figfile)
+  print(figfile, end='')
+#+END_SRC
+
+#+BEGIN_SRC sh :results file
+source activate pyneb27
+python oplus-ratio-plot.py
+#+END_SRC
+
+#+RESULTS:
+[[file:oplus-ratio-plot.pdf]]
+
++ Alternatively, contours of the ratio in the T, N plane
+
+#+BEGIN_SRC python :eval no :tangle oplus-ratio-contour.py
+  from __future__ import print_function
+  import sys
+  import numpy as np
+  import pyneb as pn
+  import matplotlib.pyplot as plt
+  import matplotlib as mpl
+  import seaborn as sns
+
+  o1r = pn.RecAtom('O', 1, case='A')
+  o2c = pn.Atom('O', 2)
+
+  Ts = np.linspace(4000, 20000, 300)
+  Ds = 10**np.linspace(1.0, 9.0, 200)
+
+  def ratio_7773_7330(tem, den):
+      em7330 = o2c.getEmissivity(tem, den, wave=7330.73)
+      em7330 += o2c.getEmissivity(tem, den, wave=7329.66)
+      em7773 = o1r.getEmissivity(tem, den, label='7773+')
+      return em7773/em7330
+
+
+  figfile = sys.argv[0].replace('.py', '.pdf')
+
+  ratios = ratio_7773_7330(Ts, Ds)
+  levels = [3.0, 1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003]
+  fig, ax = plt.subplots(figsize=(6, 6))
+
+  Ts = Ts[:, None]*np.ones_like(ratios)
+  Ds = Ds[None, :]*np.ones_like(ratios)
+
+  #ax.contour(Ts, Ds, Ds, levels=[100, 10000, 1e6], cmap='magma_r')
+  c = ax.contour(Ds, Ts, ratios,
+                 levels=levels[::-1],
+                 cmap='tab20b_r', linewidths=3,
+                 norm=mpl.colors.LogNorm())
+  # ax.clabel(c, levels[1::2], fontsize='x-small',
+  #           inline=False, rightside_up=True, use_clabeltext=True)
+  cb = fig.colorbar(c, orientation='horizontal')
+  cb.set_label("O I 7773 / [O II] 7330")
+  # ax.annotate("O I 7773 / [O II] 7330", (1e4, 18000))
+
+  ax.set(
+      ylabel="Temperature, K",
+      xlabel="Density, cm$^{-3}$",
+      xscale='log',
+  )
+  sns.despine()
+  fig.tight_layout()
+  fig.savefig(figfile)
+  print(figfile, end='')
+#+END_SRC
+
+#+BEGIN_SRC sh :results file
+source activate pyneb27
+python oplus-ratio-contour.py
+#+END_SRC
+
+#+RESULTS:
+[[file:oplus-ratio-contour.pdf]]
+
++ So, there are two density regimes: < 100 pcc and > 1e4 pcc, where it is constant with density
+  + But for 100 \to 10000 pcc, the 7330 lines get stronger with density by a factor of about 3, which has the same effect on the ratio as about a 20% increase in T
+    + Why is that?
+  + Then, above 1e6 pcc, the collisional de-excitation kicks in and 7330 goes down again
+
+
++ And repeat for the 7320 line, instead of 7330
+#+BEGIN_SRC python :eval no :tangle oplus-alt-ratio-contour.py
+  from __future__ import print_function
+  import sys
+  import numpy as np
+  import pyneb as pn
+  import matplotlib.pyplot as plt
+  import matplotlib as mpl
+  import seaborn as sns
+
+  o1r = pn.RecAtom('O', 1, case='A')
+  o2c = pn.Atom('O', 2)
+
+  Ts = np.linspace(3000, 25000, 300)
+  Ds = 10**np.linspace(0.0, 9.0, 200)
+
+  def ratio_7773_7320(tem, den):
+      em7320 = o2c.getEmissivity(tem, den, wave=7318.92)
+      em7320 += o2c.getEmissivity(tem, den, wave=7319.98)
+      em7773 = o1r.getEmissivity(tem, den, label='7773+')
+      return em7773/em7320
+
+
+  figfile = sys.argv[0].replace('.py', '.pdf')
+
+  ratios = ratio_7773_7320(Ts, Ds).T
+  levels = [3.0, 1.0, 0.3, 0.1, 0.03, 0.01, 0.003, 0.001, 0.0003]
+  fig, ax = plt.subplots()
+
+  Ts = Ts[None, :]*np.ones_like(ratios)
+  Ds = Ds[:, None]*np.ones_like(ratios)
+
+  #ax.contour(Ts, Ds, Ds, levels=[100, 10000, 1e6], cmap='magma_r')
+  c = ax.contour(Ts, Ds, ratios,
+                 levels=levels[::-1],
+                 cmap='magma_r',
+                 norm=mpl.colors.LogNorm())
+  ax.clabel(c, levels[1::2], fontsize='x-small',
+            inline=False)
+  ax.legend(ncol=2)
+
+  ax.set(
+      xlabel="Temperature, K",
+      ylabel="Density, [cc]",
+      yscale='log',
+  )
+  sns.despine()
+  fig.tight_layout()
+  fig.savefig(figfile)
+  print(figfile, end='')
+#+END_SRC
+
+#+BEGIN_SRC sh :results file
+source activate pyneb27
+python oplus-alt-ratio-contour.py
+#+END_SRC
+
+#+RESULTS:
+[[file:oplus-alt-ratio-contour.pdf]]
+
++ This is extremely similar
+
+
 ** TODO Look at O I 7773 recombination line
 + From Jorge García's talk
 + O I triplet at 7771 + 73 + 74 \AA
@@ -333,7 +531,7 @@ python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
 + This looks great - it is very similar to the [N II] temperature
   + Here is a [[file:Screenshot%202017-10-28%2015.48.41.png][screenshot]]
   + In the bar, the T increase is on neutral side of i-front
-+ Next question, what is theoretical value?
++ Next question, what is [[id:01887326-EFF3-4C42-ABEB-9EC5056B0947][theoretical value]]?
 
 
 
