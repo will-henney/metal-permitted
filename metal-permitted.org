@@ -1,3 +1,4 @@
+#+OPTIONS: ^:{}
 Attempt to put together all that I have previously done on metal recombination lines, particularly in Orion
 
 * New stuff [2017-10-24 Tue]
@@ -47,6 +48,16 @@ Attempt to put together all that I have previously done on metal recombination l
   + Manuel best (I think)
   + MUSE worst
 
+
+
+** Other lines to look into 
+
+*** O II doublet 4414.9, 4416.8
++ Bluer line is clearly visible in Adal spectra, right next to a [Fe II] line, but clearly separable
++ Redder line is half the strength, and is right under another [Fe II] line, so will be very hard to measure
++ Vladimir has them being 82% recombination
+*** N I multiplet 8212, 8216.34, 8223.14
++ These look like they are recombination
 ** Theoretical line strengths
 *** TODO Get O II line strengths vs (n, T) from Storey (2017)
 + They have a fortran program to extract lines from their data base
@@ -79,6 +90,8 @@ CLOSED: [2017-10-28 Sat 15:59]
   | Ion | line | Case |     a |      b |     c |     d |  Br | Q |     Y |
   |-----+------+------+-------+--------+-------+-------+-----+---+-------|
   | O I | 7773 | A    | 1.983 | -0.630 | 0.971 | 0.573 | 1.0 | B | 1.006 |
++ So, this is best done with ~pyneb~, as is everything else
+
 
 
 *** [O II] collisional line strengths
@@ -574,6 +587,27 @@ python sky-tile-hist.py LineMaps/linesum-O_I-7773.fits
   #+END_SRC
 + [ ] And do the ratio
 
+
+** List of ratios: line-ratio-list-orl.tab
+:PROPERTIES:
+:TABLE_EXPORT_FILE: line-ratio-list-orl.tab
+:TABLE_EXPORT_FORMAT: orgtbl-to-tsv
+:END:
++ Export with =C-c t e= after editing
++ The =Group= column is to allow selecting certain subsets of the ratios for recalculation as needed
++ The full list from the MUSE project is [[id:026A1878-E6AC-4E5B-8180-AEE71DC9C829][here]]
++ Copy to server
++ Run as 
+  #+BEGIN_SRC sh :eval no
+  python ratios-from-table.py -orl
+  #+END_SRC
+
+#+name: line-ratio-list-orl
+| Group  | Numerator | Denominator | Comment             |
+|--------+-----------+-------------+---------------------|
+| O plus | O_I-7773  | O_II-7730   | T (and N) sensitive |
+
+
 ** TODO Looking at all the MUSE O II and N II lines
 + These are in better shape than I thought
 + We should be able to get the O II V1 multiplet in three parts:
@@ -744,6 +778,13 @@ Can do this on laptop
   done
 #+END_SRC
 Run in terminal
+
+#+BEGIN_SRC sh
+  python ../OrionMuse/muse_line_ratio.py N_II-5667 N_II-5942 linesum bin256
+#+END_SRC
+
+#+RESULTS:
+: LineMaps/linesum-N_II-5667-bin256.fits LineMaps/linesum-N_II-5942-bin256.fits
 
 #+BEGIN_SRC sh
   python ../OrionMuse/muse_line_ratio.py N_II-5680 N_II-5667 linesum bin256
