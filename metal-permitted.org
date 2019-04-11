@@ -1,7 +1,58 @@
 #+OPTIONS: ^:{}
 Attempt to put together all that I have previously done on metal recombination lines, particularly in Orion
 
-* New stuff [2017-10-24 Tue]
+
+* Dielectronic fluorescence
++ Is this possible?
++ Based on radiative stabilization of 2-electron auto-ionizing states
+
+* Empirical evidence from planetary nebulae
++ Papers
+  + Garnett:2001a
+    + Imaging of Ring Nebula NGC 6720
+    + Find that O II is highest towards the inside of the [O III] shell
+    + They try to explain this by high-T di-electronic recombination at the interface between photoionized shell and hot bubble
+      + But they can't get this to work
+      + *and* there is no hot bubble there, since they are ignoring the He II photoionized zone that is inside the [O III] zone
+        + any hot bubble is very small and corresponds to the inner dip in He II
+        + the O II comes from the outer part of the He II zone
+  + Richer:2013a
+  + Garcia-Rojas:2016b
+    + Imaging of NGC 6678
+    + This has ADF ~ 20 and is close binary, so may fall under Wesson:2018a explanation
+    + Clear difference between emission of O II V1 and [O III] 5007 with O II being on inside rim of the main emission shell
+    + Weird that [O III] 4363 has similar morphology to the O II lines
+      + They try to interpret this as being high-T and high-n (so 5007 is suppressed), but this would mean very high pressure, which is hard to believe
+      + And it would be impossible to get the 4363/5007 ratio high enough I think
+  + Richer:2017a
+  + Pena:2017a
+  + Richer:2019a
+
+
+** Arguments against an atomic physics solution
++ Wesson:2018a look at extreme-adf nebulae (ADF = 5 \to 100)
+  + They find that these tend to be close binary stars
+  + Also find anti-correlation with density
+  + Say due to nova explosions, enriched in CNONe but not 3rd row elements
+  + /However/ this is for the most extreme ADFs, and we already knew that there are high-metallicity knots in objects like A30
+    + There is still room for explaining more moderate ADF factors in PNe and HII regions
+    + They take an ADF < 5 to be "normal"
+
+
+
+* Fluorescent lines
++ Grandi:1976a has a good summary
+  + All the O II lines are listed as recombination
+  + Most of N II are mixture of starlight and recomb
+  + All Si II are starlight
+    + I have rgb image of 5041, 5056, and 6347 in MUSE project
+  + C II 7236 is both but 4267 should be pure recombination
+  + The maps of the fluorescent lines like Si II and C II seem to trace the inner surface of various structures in the nebula
+    + They show beautiful little twirly filaments
+
+
+* The O I 7773 recombination line
+* Older stuff that was new at the time [2017-10-24 Tue]
 
 
 ** Renaming the multibin project?
@@ -17,9 +68,11 @@ Attempt to put together all that I have previously done on metal recombination l
   + Michael Richer
   + César 
   + Jorge García
-  + Ana Monreal-Ibero
+  + Ana Monreal-Ibero?
   + Grazyna?
-  + Gary?
+  + Gary, Peter, et al?
+  + Miriam?
+  + Peimberts?
 
 ** What are the advantages/disadvantages of each dataset?
 + Spectral range
@@ -911,13 +964,14 @@ total size is 10,558,080  speedup is 113,527.74
   + [[file:copied-figs/oii-density-compare.pdf]]
   + [[file:copied-figs/oii-density-vs-radius.pdf]]
   + [[file:copied-figs/oii-vs-cliii-densities.pdf]]
-    + Strangely, O II densities are lower than 
+    + Strangely, O II densities are lower than [Cl III] densities by factor of 2 to 4
 ** Temperature-sensitive ratios
 + Adal spectra with binning has lots of plots, such as
   + [[file:copied-figs/oii-t-orlcel-vs-cel-adal-bin.png]]
   + [[file:copied-figs/oii-t-orl-vs-cel-adal-bin.png]]
 + Manu spectra
   + [[file:copied-figs/oii-oiii-temperature-masked.pdf]]
+    + We could annotate this with the CEL temperature
   + [[file:copied-figs/oii-oiii-temperature.pdf]]
   + [[file:copied-figs/oii-temperature-three-vs-radius.pdf]]
 + The comparison of T(ORL-CEL) with T(CEL) is consistent with a 10% difference between the two
@@ -937,4 +991,4 @@ total size is 10,558,080  speedup is 113,527.74
   + 4649/4189
     + Looks like we can see it clearly in Manu spectra - not sure why I haven't measured it
   + 4649/4089
-    + Affected by various blends
+    + Affected by various blends - especially Si IV 4088.86 \AA 
