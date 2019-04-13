@@ -822,6 +822,10 @@ CLOSED: [2017-10-26 Thu 09:29]
 **** TODO Do the same for ratios
 *** DONE Initial work on MUSE lines
 CLOSED: [2017-10-26 Thu 10:58]
+**** Extra comments 2019 April
++ The Fe II 4905 line is probably something else
+  + It looks like a typical inner fluorescent pattern
++ The Si lines are also worth looking at
 **** Doing the multibinning in situ
 Can do this on laptop
 #+BEGIN_SRC sh :eval no :tangle selected-multibin.sh
